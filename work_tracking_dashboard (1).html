@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบติดตามงาน OQA-WAC - Task Tracking Dashboard (14/10/2026)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font: Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f8fafc;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; }
+            .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl { box-shadow: none !important; }
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header / Navbar -->
+    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-3 md:space-y-0">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2.5 bg-indigo-600 rounded-xl border border-indigo-400/30 shadow-inner">
+                        <i class="fa-solid fa-list-check text-2xl text-amber-300"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-xl sm:text-2xl font-bold tracking-tight">ระบบติดตามงาน OQA-WAC</h1>
+                            <span class="text-xs bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 px-2.5 py-0.5 rounded-full font-medium">14 ต.ค. 2026</span>
+                        </div>
+                        <p class="text-xs text-slate-300 flex items-center gap-2 mt-0.5">
+                            <span><i class="fa-solid fa-building-user text-indigo-400"></i> ส่วนงาน OQA-WAC</span>
+                            <span>•</span>
+                            <span id="share-sync-indicator" class="text-emerald-400 font-medium flex items-center gap-1">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> พร้อมแชร์ผ่านลิงก์ / URL Sync
+                            </span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Action Controls -->
+                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end no-print">
+                    <button onclick="shareDashboardLink()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold text-sm px-3.5 py-2 rounded-lg shadow-sm transition flex items-center gap-1.5" title="คัดลอกลิงก์พร้อมข้อมูลล่าสุดเพื่อส่งให้เพื่อนร่วมงาน">
+                        <i class="fa-solid fa-share-nodes"></i> แชร์ลิงก์ Dashboard
+                    </button>
+                    <button onclick="openAddTaskModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-3.5 py-2 rounded-lg shadow-sm transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus"></i> เพิ่มงาน
+                    </button>
+                    <button onclick="exportToCSV()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium px-3 py-2 rounded-lg border border-slate-700 transition flex items-center gap-1.5" title="ส่งออกเป็น CSV">
+                        <i class="fa-solid fa-file-csv"></i> CSV
+                    </button>
+                    <button onclick="resetToInitialData()" class="bg-slate-800 hover:bg-rose-900 text-slate-300 hover:text-rose-200 text-sm font-medium px-3 py-2 rounded-lg border border-slate-700 transition flex items-center gap-1.5" title="รีเซ็ตเป็นข้อมูลเริ่มต้นจากไฟล์ 14/10/2026">
+                        <i class="fa-solid fa-rotate-left"></i> รีเซ็ต
+                    </button>
+                    <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium px-3 py-2 rounded-lg border border-slate-700 transition flex items-center gap-1.5" title="พิมพ์หน้ารายงาน">
+                        <i class="fa-solid fa-print"></i> พิมพ์
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Shared Link Banner Notice -->
+    <div id="shared-notice-banner" class="hidden bg-amber-50 border-b border-amber-200 text-amber-900 px-4 py-2.5 text-xs text-center flex items-center justify-center gap-2 no-print">
+        <i class="fa-solid fa-circle-info text-amber-600"></i>
+        <span>คุณกำลังรับชมข้อมูลที่ถูกแชร์ผ่าน URL Link </span>
+        <button onclick="saveSharedToLocal()" class="underline font-bold text-amber-950 hover:text-amber-800 ml-2">บันทึกชุดข้อมูลนี้เป็นข้อมูลหลักของคุณ</button>
+    </div>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full space-y-6">
+
+        <!-- Executive Metrics Overview -->
+        <section class="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-500">
+                    <span class="text-xs font-medium uppercase">งานทั้งหมด</span>
+                    <i class="fa-solid fa-list-check text-indigo-600"></i>
+                </div>
+                <div class="mt-2 flex items-baseline justify-between">
+                    <span id="metric-total" class="text-2xl font-bold text-slate-900">0</span>
+                    <span class="text-xs text-slate-500">รายการ</span>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-amber-200 bg-amber-50/30 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-amber-700">
+                    <span class="text-xs font-medium uppercase">รีเทิร์นจาก TCE</span>
+                    <i class="fa-solid fa-rotate-left text-amber-500"></i>
+                </div>
+                <div class="mt-2 flex items-baseline justify-between">
+                    <span id="metric-tce" class="text-2xl font-bold text-amber-800">0</span>
+                    <span class="text-xs text-amber-700">รายการ</span>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-sky-200 bg-sky-50/30 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-sky-700">
+                    <span class="text-xs font-medium uppercase">งานค้าง (Pending)</span>
+                    <i class="fa-solid fa-clock text-sky-500"></i>
+                </div>
+                <div class="mt-2 flex items-baseline justify-between">
+                    <span id="metric-pending" class="text-2xl font-bold text-sky-800">0</span>
+                    <span class="text-xs text-sky-700">รายการ</span>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-rose-200 bg-rose-50/30 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-rose-700">
+                    <span class="text-xs font-medium uppercase">ต้องส่ง Mail</span>
+                    <i class="fa-solid fa-envelope-circle-check text-rose-500"></i>
+                </div>
+                <div class="mt-2 flex items-baseline justify-between">
+                    <span id="metric-mail" class="text-2xl font-bold text-rose-800">0</span>
+                    <span class="text-xs text-rose-700">รายการ</span>
+                </div>
+            </div>
+
+            <div class="col-span-2 md:col-span-1 bg-white p-4 rounded-xl border border-emerald-200 bg-emerald-50/30 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-emerald-700">
+                    <span class="text-xs font-medium uppercase">เสร็จสิ้นแล้ว</span>
+                    <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                </div>
+                <div class="mt-2 flex items-baseline justify-between">
+                    <span id="metric-completed" class="text-2xl font-bold text-emerald-800">0</span>
+                    <span id="metric-progress-percent" class="text-xs font-semibold text-emerald-700">0%</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Overall Progress Bar Card -->
+        <section class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-indigo-600"></i> ความคืบหน้าการดำเนินงาน OQA-WAC รวม
+                </span>
+                <span id="progress-text-detail" class="text-xs text-slate-500 font-medium">0 จาก 0 รายการย่อยเสร็จสมบูรณ์</span>
+            </div>
+            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden p-0.5 border border-slate-200">
+                <div id="main-progress-bar" class="bg-gradient-to-r from-indigo-500 via-sky-500 to-emerald-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+        </section>
+
+        <!-- Filters & Search Toolbar -->
+        <section class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3 no-print">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <!-- Search Box -->
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input type="text" id="search-input" oninput="renderTasks()" placeholder="ค้นหารหัสสินค้า, ปัญหา, แอ็กชัน..." class="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                </div>
+
+                <!-- Category Filter -->
+                <div>
+                    <select id="filter-category" onchange="renderTasks()" class="w-full py-2 px-3 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        <option value="ALL">หมวดหมู่ทั้งหมด</option>
+                        <option value="TCE">งานรีเทิร์นจาก TCE</option>
+                        <option value="PENDING">งานค้าง (Pending)</option>
+                    </select>
+                </div>
+
+                <!-- Assignee Filter -->
+                <div>
+                    <select id="filter-assignee" onchange="renderTasks()" class="w-full py-2 px-3 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        <option value="ALL">ผู้รับผิดชอบทั้งหมด</option>
+                        <option value="หัวหน้าแผนก">หัวหน้าแผนก</option>
+                        <option value="Mo">Mo</option>
+                    </select>
+                </div>
+
+                <!-- Status Filter -->
+                <div>
+                    <select id="filter-status" onchange="renderTasks()" class="w-full py-2 px-3 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        <option value="ALL">สถานะทั้งหมด</option>
+                        <option value="PENDING">รอดำเนินการ</option>
+                        <option value="WAITING_MAIL">ต้องส่ง Mail</option>
+                        <option value="WAITING_STOCK">รอหลังนับสต็อก</option>
+                        <option value="COMPLETED">เสร็จสิ้น (Completed)</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tasks Display Container -->
+        <div id="tasks-container" class="space-y-6">
+            <!-- Dynamic Content populated by JavaScript -->
+        </div>
+
+    </main>
+
+    <!-- Modal for Share Link Link Generation -->
+    <div id="share-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 no-print">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all">
+            <div class="bg-amber-500 text-slate-950 p-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-share-nodes text-slate-900"></i> แชร์ลิงก์ Dashboard (OQA-WAC)
+                </h3>
+                <button onclick="closeShareModal()" class="text-slate-900 hover:text-slate-700 text-xl font-bold">&times;</button>
+            </div>
+            <div class="p-5 space-y-4">
+                <p class="text-xs text-slate-600">
+                    ลิงก์นี้ประกอบด้วยข้อมูลสถานะล่าสุดที่คุณกำลังใช้งานอยู่ สามารถคัดลอกส่งผ่าน <strong>LINE, MS Teams, อีเมล</strong> ให้ทีมงานดูข้อมูลตรงกันได้ทันที
+                </p>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">URL ลิงก์สำหรับแชร์:</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="share-url-input" readonly class="w-full text-xs border border-slate-300 bg-slate-50 rounded-lg p-2.5 text-slate-700 focus:outline-none select-all font-mono">
+                        <button onclick="copyShareUrl()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shrink-0 transition flex items-center gap-1">
+                            <i class="fa-regular fa-copy"></i> คัดลอก
+                        </button>
+                    </div>
+                </div>
+                <div class="p-3 bg-indigo-50 border border-indigo-100 rounded-lg text-xs text-indigo-900 flex items-start gap-2">
+                    <i class="fa-solid fa-lightbulb text-amber-500 mt-0.5"></i>
+                    <span><strong>เคล็ดลับ:</strong> เมื่อมีความเคลื่อนไหวหรืออัปเดตงานเพิ่มเติม เพียงกดปุ่ม "แชร์ลิงก์ Dashboard" อีกครั้งเพื่อสร้าง URL ลิงก์อัปเดตใหม่ได้ตลอดเวลา</span>
+                </div>
+                <div class="flex justify-end pt-2">
+                    <button type="button" onclick="closeShareModal()" class="px-4 py-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition">ปิดหน้าต่าง</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Adding New Task -->
+    <div id="add-task-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 no-print">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all">
+            <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-plus-circle text-amber-400"></i> เพิ่มรายการงาน OQA-WAC ใหม่
+                </h3>
+                <button onclick="closeAddTaskModal()" class="text-slate-300 hover:text-white text-xl font-bold">&times;</button>
+            </div>
+            <form id="add-task-form" onsubmit="handleAddTask(event)" class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">หมวดหมู่งาน *</label>
+                    <select id="new-category" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                        <option value="TCE">งานรีเทิร์นจาก TCE</option>
+                        <option value="PENDING">งานค้าง (Pending Tasks)</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">รหัสสินค้า / ชื่องาน *</label>
+                        <input type="text" id="new-code" placeholder="เช่น WH-MD135" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">จำนวน (Qty)</label>
+                        <input type="text" id="new-qty" placeholder="เช่น 1,008 PCS / 2 พาเลท" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">รายละเอียดปัญหา / หมายเหตุ</label>
+                    <textarea id="new-problem" rows="2" placeholder="ระบุรายละเอียดปัญหาที่พบ..." class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">ผู้รับผิดชอบหลัก</label>
+                        <select id="new-assignee" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="หัวหน้าแผนก">หัวหน้าแผนก</option>
+                            <option value="Mo">Mo</option>
+                            <option value="-">ไม่ระบุ</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">สถานะแรกเริ่ม</label>
+                        <select id="new-status" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="PENDING">รอดำเนินการ</option>
+                            <option value="WAITING_MAIL">ต้องส่ง Mail</option>
+                            <option value="WAITING_STOCK">รอหลังนับสต็อก</option>
+                            <option value="COMPLETED">เสร็จสิ้น</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">แอ็กชันที่ต้องทำ (Action / Status Description)</label>
+                    <input type="text" id="new-action" placeholder="เช่น ต้องส่ง Mail Block หัวหน้าแผนก" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-3 border-t border-slate-200">
+                    <button type="button" onclick="closeAddTaskModal()" class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition">ยกเลิก</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 no-print"></div>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 text-xs py-4 mt-8 border-t border-slate-800 no-print">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p>ระบบติดตามงานส่วนงาน OQA-WAC | อัปเดตข้อมูล ณ วันที่ 14 ตุลาคม 2026</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Data Structure imported directly from Task_Tracking_Dashboard_14102026.csv (Dated 14/10/2026)
+        const initialTaskData = [
+            {
+                id: "TCE-1",
+                category: "TCE",
+                code: "WH-MD135",
+                problem: "ปัญหา Knob หลุดจาก Body",
+                qty: "1,008 PCS",
+                assignee: "หัวหน้าแผนก",
+                action: "ต้องส่ง Mail Block",
+                status: "WAITING_MAIL",
+                completed: false,
+                subtasks: []
+            },
+            {
+                id: "TCE-2",
+                category: "TCE",
+                code: "WH-MD145",
+                problem: "ปัญหา Knob หลุดจาก Body",
+                qty: "1,008 PCS",
+                assignee: "หัวหน้าแผนก",
+                action: "ต้องส่ง Mail Block",
+                status: "WAITING_MAIL",
+                completed: false,
+                subtasks: []
+            },
+            {
+                id: "TCE-3",
+                category: "TCE",
+                code: "PJ-WA115",
+                problem: "ปัญหาเสียงดัง (เดือน 4, 5/26)",
+                qty: "2 พาเลท",
+                assignee: "Mo",
+                action: "สุ่มพาเลทละ 3 PCS -> รอส่ง Mail (ก่อนนับสต็อก)",
+                status: "WAITING_MAIL",
+                completed: false,
+                subtasks: []
+            },
+            {
+                id: "TCE-4",
+                category: "TCE",
+                code: "PT-TA169",
+                problem: "ปัญหา Girdle ring หลวม",
+                qty: "518 PCS",
+                assignee: "Mo",
+                action: "รอหัวหน้ากลับมารื้อ (รอหลังนับสต็อก)",
+                status: "WAITING_STOCK",
+                completed: false,
+                subtasks: []
+            },
+            {
+                id: "TCE-5",
+                category: "TCE",
+                code: "WH-All",
+                problem: "ปัญหา Coupling A ไม่มีเกลียว",
+                qty: "-",
+                assignee: "หัวหน้าแผนก / Mo",
+                action: "ดำเนินการตาม 3 ขั้นตอนย่อย",
+                status: "PENDING",
+                completed: false,
+                subtasks: [
+                    { id: "5.1", title: "5.1 ส่ง Mail ให้ TCE ขายงานก่อนเดือน 09/26", assignee: "หัวหน้าแผนก", completed: false, status: "WAITING_MAIL" },
+                    { id: "5.2", title: "5.2 ทำข้อมูลเทียบ Coupling A ที่ผลิตวันที่ 24/09/26 นำไปใช้กับ FG วันไหนบ้าง", assignee: "หัวหน้าแผนก", completed: false, status: "PENDING" },
+                    { id: "5.3", title: "5.3 นำงาน FG จากข้อมูลใน 5.2 มาสุ่ม (หลังนับสต็อก)", assignee: "Mo", completed: false, status: "WAITING_STOCK" }
+                ]
+            },
+            {
+                id: "PND-1",
+                category: "PENDING",
+                code: "Teardown Mitsubishi",
+                problem: "งานค้างตรวจสอบโครงสร้างและถอดประกอบ",
+                qty: "-",
+                assignee: "-",
+                action: "รอดำเนินการ Teardown",
+                status: "PENDING",
+                completed: false,
+                subtasks: []
+            },
+            {
+                id: "PND-2",
+                category: "PENDING",
+                code: "New Project PJ-SL165 RG",
+                problem: "โครงการใหม่ รอดำเนินการ",
+                qty: "5 PCS",
+                assignee: "-",
+                action: "ติดตามและจัดเตรียมชิ้นงาน New Project",
+                status: "PENDING",
+                completed: false,
+                subtasks: []
+            },
+            {
+                id: "PND-3",
+                category: "PENDING",
+                code: "ฝักบัว WH-MD135 / 145C",
+                problem: "ตรวจสอบ / ดำเนินการชิ้นงานฝักบัว",
+                qty: "6 PCS",
+                assignee: "-",
+                action: "รอดำเนินการตรวจสอบ",
+                status: "PENDING",
+                completed: false,
+                subtasks: []
+            },
+            {
+                id: "PND-4",
+                category: "PENDING",
+                code: "ส่ง Mail WH-MD135 / 145C ให้หัวหน้าแผนก",
+                problem: "การประสานงานทางอีเมล",
+                qty: "-",
+                assignee: "หัวหน้าแผนก",
+                action: "ส่ง Mail WH-MD135 / 145C ให้หัวหน้าแผนก",
+                status: "WAITING_MAIL",
+                completed: false,
+                subtasks: []
+            }
+        ];
+
+        // Global State
+        let tasks = [];
+        let isSharedDataMode = false;
+
+        // Initialize App & URL Sharing Logic
+        function initApp() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const sharedData = urlParams.get('data');
+
+            if (sharedData) {
+                try {
+                    // Decompress/Decode shared state from URL hash/query
+                    const decodedJSON = decodeURIComponent(escape(atob(sharedData)));
+                    tasks = JSON.parse(decodedJSON);
+                    isSharedDataMode = true;
+                    document.getElementById('shared-notice-banner').classList.remove('hidden');
+                    showToast('โหลดข้อมูลที่มีการแชร์เรียบร้อย', 'info');
+                } catch(e) {
+                    console.error('Failed to parse shared URL data:', e);
+                    loadFromLocalStorageOrDefault();
+                }
+            } else {
+                loadFromLocalStorageOrDefault();
+            }
+
+            renderTasks();
+        }
+
+        function loadFromLocalStorageOrDefault() {
+            const savedTasks = localStorage.getItem('oqa_wac_tasks_14102026');
+            if (savedTasks) {
+                try {
+                    tasks = JSON.parse(savedTasks);
+                } catch(e) {
+                    tasks = JSON.parse(JSON.stringify(initialTaskData));
+                }
+            } else {
+                tasks = JSON.parse(JSON.stringify(initialTaskData));
+            }
+        }
+
+        // Save current state
+        function saveTasks() {
+            localStorage.setItem('oqa_wac_tasks_14102026', JSON.stringify(tasks));
+            updateMetrics();
+        }
+
+        // Save shared URL data into local storage permanently
+        function saveSharedToLocal() {
+            saveTasks();
+            document.getElementById('shared-notice-banner').classList.add('hidden');
+            // Clean URL without reloading page
+            window.history.replaceState({}, document.title, window.location.pathname);
+            showToast('บันทึกชุดข้อมูลที่แชร์ลงบนเครื่องเรียบร้อยแล้ว', 'success');
+        }
+
+        // Reset to Initial CSV State
+        function resetToInitialData() {
+            if (confirm("คุณต้องการรีเซ็ตข้อมูลทั้งหมดกลับเป็นค่าเริ่มต้นตามไฟล์ 14/10/2026 ใช่หรือไม่?")) {
+                tasks = JSON.parse(JSON.stringify(initialTaskData));
+                saveTasks();
+                window.history.replaceState({}, document.title, window.location.pathname);
+                document.getElementById('shared-notice-banner').classList.add('hidden');
+                renderTasks();
+                showToast('รีเซ็ตข้อมูลกลับเป็นค่าเริ่มต้นเรียบร้อยแล้ว', 'warning');
+            }
+        }
+
+        // Generate Shareable Link with encoded state
+        function shareDashboardLink() {
+            const jsonString = JSON.stringify(tasks);
+            // Base64 encode UTF-8
+            const encodedData = btoa(unescape(encodeURIComponent(jsonString)));
+            const shareUrl = `${window.location.origin}${window.location.pathname}?data=${encodedData}`;
+
+            document.getElementById('share-url-input').value = shareUrl;
+            document.getElementById('share-modal').classList.remove('hidden');
+        }
+
+        function closeShareModal() {
+            document.getElementById('share-modal').classList.add('hidden');
+        }
+
+        function copyShareUrl() {
+            const copyText = document.getElementById('share-url-input');
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copyText.value).then(() => {
+                showToast('คัดลอกลิงก์แชร์ลง Clipboard เรียบร้อยแล้ว!', 'success');
+            }).catch(() => {
+                showToast('คัดลอกสำเร็จ', 'success');
+            });
+        }
+
+        // Render Dashboard View
+        function renderTasks() {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const catFilter = document.getElementById('filter-category').value;
+            const assigneeFilter = document.getElementById('filter-assignee').value;
+            const statusFilter = document.getElementById('filter-status').value;
+
+            const container = document.getElementById('tasks-container');
+            container.innerHTML = '';
+
+            const filtered = tasks.filter(t => {
+                if (catFilter !== 'ALL' && t.category !== catFilter) return false;
+                if (assigneeFilter !== 'ALL' && !t.assignee.includes(assigneeFilter)) return false;
+
+                if (statusFilter !== 'ALL') {
+                    if (statusFilter === 'COMPLETED' && !t.completed) return false;
+                    if (statusFilter !== 'COMPLETED' && t.status !== statusFilter) return false;
+                }
+
+                if (search) {
+                    const matchCode = t.code.toLowerCase().includes(search);
+                    const matchProb = t.problem.toLowerCase().includes(search);
+                    const matchAction = t.action.toLowerCase().includes(search);
+                    const matchAssign = t.assignee.toLowerCase().includes(search);
+                    return matchCode || matchProb || matchAction || matchAssign;
+                }
+
+                return true;
+            });
+
+            const tceGroup = filtered.filter(t => t.category === 'TCE');
+            const pendingGroup = filtered.filter(t => t.category === 'PENDING');
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white p-12 text-center rounded-xl border border-slate-200 shadow-sm">
+                        <i class="fa-solid fa-folder-open text-4xl text-slate-300 mb-3"></i>
+                        <p class="text-slate-500 font-medium">ไม่พบข้อมูลตามเงื่อนไขที่ค้นหา</p>
+                        <button onclick="resetFilters()" class="mt-3 text-xs text-indigo-600 font-semibold hover:underline">ล้างตัวกรองทั้งหมด</button>
+                    </div>
+                `;
+                updateMetrics();
+                return;
+            }
+
+            if (tceGroup.length > 0) {
+                container.appendChild(createCategorySection("งานที่รีเทิร์นกลับมาจาก TCE (OQA-WAC)", "fa-rotate-left", "amber", tceGroup));
+            }
+
+            if (pendingGroup.length > 0) {
+                container.appendChild(createCategorySection("งานค้าง (Pending Tasks OQA-WAC)", "fa-clock", "sky", pendingGroup));
+            }
+
+            updateMetrics();
+        }
+
+        function getStatusBadge(status, completed) {
+            if (completed) {
+                return `<span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-medium inline-flex items-center gap-1 border border-emerald-300"><i class="fa-solid fa-check"></i> เสร็จสิ้นแล้ว</span>`;
+            }
+
+            switch(status) {
+                case 'WAITING_MAIL':
+                    return `<span class="bg-rose-100 text-rose-800 text-xs px-2.5 py-1 rounded-full font-medium inline-flex items-center gap-1 border border-rose-300"><i class="fa-solid fa-envelope"></i> ต้องส่ง Mail</span>`;
+                case 'WAITING_STOCK':
+                    return `<span class="bg-purple-100 text-purple-800 text-xs px-2.5 py-1 rounded-full font-medium inline-flex items-center gap-1 border border-purple-300"><i class="fa-solid fa-boxes-stacked"></i> รอหลังนับสต็อก</span>`;
+                case 'PENDING':
+                default:
+                    return `<span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-medium inline-flex items-center gap-1 border border-amber-300"><i class="fa-solid fa-hourglass-half"></i> รอดำเนินการ</span>`;
+            }
+        }
+
+        function createCategorySection(title, iconClass, colorScheme, taskList) {
+            const section = document.createElement('div');
+            section.className = "bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6";
+
+            const borderColors = {
+                amber: "border-l-4 border-l-amber-500",
+                sky: "border-l-4 border-l-sky-500"
+            };
+
+            section.innerHTML = `
+                <div class="bg-slate-50 border-b border-slate-200 ${borderColors[colorScheme]} px-5 py-3.5 flex justify-between items-center">
+                    <h2 class="font-bold text-slate-800 text-base sm:text-lg flex items-center gap-2.5">
+                        <i class="fa-solid ${iconClass} text-${colorScheme}-500"></i>
+                        ${title}
+                        <span class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-semibold">${taskList.length} รายการ</span>
+                    </h2>
+                </div>
+                <div class="divide-y divide-slate-100">
+                    ${taskList.map(task => renderTaskRow(task)).join('')}
+                </div>
+            `;
+            return section;
+        }
+
+        function renderTaskRow(task) {
+            const isSubtaskTask = task.subtasks && task.subtasks.length > 0;
+
+            let subtaskHTML = '';
+            if (isSubtaskTask) {
+                subtaskHTML = `
+                    <div class="mt-3 ml-2 sm:ml-6 pl-3 border-l-2 border-indigo-200 space-y-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <div class="text-xs font-semibold text-slate-600 mb-1 flex items-center justify-between">
+                            <span>ขั้นตอนย่อยของการดำเนินงาน:</span>
+                            <span class="text-indigo-600 font-medium">${task.subtasks.filter(st => st.completed).length}/${task.subtasks.length} เสร็จสิ้น</span>
+                        </div>
+                        ${task.subtasks.map(st => `
+                            <div class="flex items-start justify-between gap-2 text-xs py-1 hover:bg-slate-100/80 p-1.5 rounded transition">
+                                <label class="flex items-start gap-2 cursor-pointer flex-grow">
+                                    <input type="checkbox" ${st.completed ? 'checked' : ''} onchange="toggleSubtask('${task.id}', '${st.id}')" class="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                                    <span class="${st.completed ? 'line-through text-slate-400' : 'text-slate-700 font-medium'}">${st.title}</span>
+                                </label>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded text-[11px] font-medium"><i class="fa-regular fa-user text-[10px]"></i> ${st.assignee}</span>
+                                    ${getStatusBadge(st.status, st.completed)}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="p-4 sm:p-5 hover:bg-slate-50/70 transition duration-150 ${task.completed ? 'bg-slate-50/50' : ''}">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                        
+                        <div class="flex items-start gap-3 flex-grow">
+                            <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTaskComplete('${task.id}')" class="mt-1.5 w-5 h-5 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer shrink-0">
+                            <div class="space-y-1 flex-grow">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="font-bold text-slate-900 text-base ${task.completed ? 'line-through text-slate-400' : ''}">${task.code}</span>
+                                    ${task.qty && task.qty !== '-' ? `<span class="bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs px-2 py-0.5 rounded font-semibold"><i class="fa-solid fa-layer-group text-[10px]"></i> ${task.qty}</span>` : ''}
+                                    ${getStatusBadge(task.status, task.completed)}
+                                </div>
+                                <p class="text-sm ${task.completed ? 'text-slate-400' : 'text-slate-600'} flex items-center gap-1.5">
+                                    <i class="fa-solid fa-triangle-exclamation text-amber-500 text-xs"></i> <span class="font-medium">ปัญหา:</span> ${task.problem}
+                                </p>
+                                ${task.action ? `
+                                    <p class="text-xs text-slate-500 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-arrow-right-long text-indigo-400"></i> <span class="font-medium">แอ็กชัน:</span> ${task.action}
+                                    </p>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap md:flex-col items-end justify-between md:justify-center gap-2 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
+                            <div class="text-xs text-slate-500 flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-md">
+                                <i class="fa-regular fa-user text-indigo-600"></i>
+                                <span>รับผิดชอบ: <strong class="text-slate-700">${task.assignee}</strong></span>
+                            </div>
+
+                            <div class="flex items-center gap-1.5 no-print">
+                                <select onchange="updateTaskStatus('${task.id}', this.value)" class="text-xs border border-slate-300 rounded px-2 py-1 bg-white focus:ring-1 focus:ring-indigo-500 outline-none">
+                                    <option value="PENDING" ${task.status === 'PENDING' ? 'selected' : ''}>รอดำเนินการ</option>
+                                    <option value="WAITING_MAIL" ${task.status === 'WAITING_MAIL' ? 'selected' : ''}>ต้องส่ง Mail</option>
+                                    <option value="WAITING_STOCK" ${task.status === 'WAITING_STOCK' ? 'selected' : ''}>รอหลังนับสต็อก</option>
+                                    <option value="COMPLETED" ${task.completed ? 'selected' : ''}>เสร็จสิ้น</option>
+                                </select>
+                                <button onclick="deleteTask('${task.id}')" class="text-slate-400 hover:text-rose-600 p-1 rounded transition" title="ลบรายการ">
+                                    <i class="fa-solid fa-trash-can text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    ${subtaskHTML}
+                </div>
+            `;
+        }
+
+        function toggleTaskComplete(id) {
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.completed = !task.completed;
+                if (task.completed) {
+                    task.status = 'COMPLETED';
+                    if (task.subtasks) task.subtasks.forEach(st => st.completed = true);
+                } else {
+                    task.status = 'PENDING';
+                }
+                saveTasks();
+                renderTasks();
+                showToast(`อัปเดตสถานะ ${task.code} แล้ว`, 'success');
+            }
+        }
+
+        function toggleSubtask(taskId, subtaskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task && task.subtasks) {
+                const subtask = task.subtasks.find(st => st.id === subtaskId);
+                if (subtask) {
+                    subtask.completed = !subtask.completed;
+                    const allDone = task.subtasks.every(st => st.completed);
+                    if (allDone) {
+                        task.completed = true;
+                        task.status = 'COMPLETED';
+                    } else {
+                        task.completed = false;
+                        task.status = 'PENDING';
+                    }
+                    saveTasks();
+                    renderTasks();
+                    showToast(`อัปเดตขั้นตอนย่อย ${subtask.id} แล้ว`, 'info');
+                }
+            }
+        }
+
+        function updateTaskStatus(id, newStatus) {
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                if (newStatus === 'COMPLETED') {
+                    task.completed = true;
+                    task.status = 'COMPLETED';
+                    if (task.subtasks) task.subtasks.forEach(st => st.completed = true);
+                } else {
+                    task.completed = false;
+                    task.status = newStatus;
+                }
+                saveTasks();
+                renderTasks();
+                showToast(`เปลี่ยนสถานะเป็น ${newStatus}`, 'info');
+            }
+        }
+
+        function deleteTask(id) {
+            if (confirm("คุณต้องการลบรายการนี้ใช่หรือไม่?")) {
+                tasks = tasks.filter(t => t.id !== id);
+                saveTasks();
+                renderTasks();
+                showToast("ลบรายการสำเร็จ", 'warning');
+            }
+        }
+
+        function updateMetrics() {
+            const total = tasks.length;
+            const tceCount = tasks.filter(t => t.category === 'TCE').length;
+            const pendingCount = tasks.filter(t => t.category === 'PENDING').length;
+            
+            const mailCount = tasks.filter(t => !t.completed && (t.status === 'WAITING_MAIL' || t.action.includes('Mail') || (t.subtasks && t.subtasks.some(st => !st.completed && st.status === 'WAITING_MAIL')))).length;
+
+            let totalUnits = 0;
+            let completedUnits = 0;
+
+            tasks.forEach(t => {
+                if (t.subtasks && t.subtasks.length > 0) {
+                    t.subtasks.forEach(st => {
+                        totalUnits++;
+                        if (st.completed) completedUnits++;
+                    });
+                } else {
+                    totalUnits++;
+                    if (t.completed) completedUnits++;
+                }
+            });
+
+            const completedTasksCount = tasks.filter(t => t.completed).length;
+            const percent = totalUnits > 0 ? Math.round((completedUnits / totalUnits) * 100) : 0;
+
+            document.getElementById('metric-total').innerText = total;
+            document.getElementById('metric-tce').innerText = tceCount;
+            document.getElementById('metric-pending').innerText = pendingCount;
+            document.getElementById('metric-mail').innerText = mailCount;
+            document.getElementById('metric-completed').innerText = completedTasksCount;
+            document.getElementById('metric-progress-percent').innerText = `${percent}%`;
+
+            document.getElementById('main-progress-bar').style.width = `${percent}%`;
+            document.getElementById('progress-text-detail').innerText = `${completedUnits} จาก ${totalUnits} ขั้นตอนย่อยเสร็จสมบูรณ์ (${percent}%)`;
+        }
+
+        function resetFilters() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('filter-category').value = 'ALL';
+            document.getElementById('filter-assignee').value = 'ALL';
+            document.getElementById('filter-status').value = 'ALL';
+            renderTasks();
+        }
+
+        function openAddTaskModal() {
+            document.getElementById('add-task-modal').classList.remove('hidden');
+        }
+
+        function closeAddTaskModal() {
+            document.getElementById('add-task-modal').classList.add('hidden');
+            document.getElementById('add-task-form').reset();
+        }
+
+        function handleAddTask(event) {
+            event.preventDefault();
+
+            const category = document.getElementById('new-category').value;
+            const code = document.getElementById('new-code').value.trim();
+            const qty = document.getElementById('new-qty').value.trim() || '-';
+            const problem = document.getElementById('new-problem').value.trim() || 'ไม่ระบุปัญหา';
+            const assignee = document.getElementById('new-assignee').value;
+            const status = document.getElementById('new-status').value;
+            const action = document.getElementById('new-action').value.trim() || '-';
+
+            const newTask = {
+                id: 'NEW-' + Date.now(),
+                category: category,
+                code: code,
+                problem: problem,
+                qty: qty,
+                assignee: assignee,
+                action: action,
+                status: status,
+                completed: status === 'COMPLETED',
+                subtasks: []
+            };
+
+            tasks.unshift(newTask);
+            saveTasks();
+            renderTasks();
+            closeAddTaskModal();
+            showToast('เพิ่มรายการใหม่เรียบร้อยแล้ว', 'success');
+        }
+
+        function exportToCSV() {
+            if (tasks.length === 0) {
+                showToast("ไม่มีข้อมูลในการส่งออก", 'warning');
+                return;
+            }
+
+            let csv = '\uFEFF';
+            csv += 'ID,หมวดหมู่,รหัสสินค้า/รายการ,ปัญหาที่พบ,จำนวน,ผู้รับผิดชอบ,แอ็กชัน,สถานะ,เสร็จสิ้น\n';
+
+            tasks.forEach(t => {
+                const catStr = t.category === 'TCE' ? 'งานรีเทิร์นจาก TCE' : 'งานค้าง';
+                const statusStr = t.completed ? 'เสร็จสิ้น' : t.status;
+                csv += `"${t.id}","${catStr}","${t.code.replace(/"/g, '""')}","${t.problem.replace(/"/g, '""')}","${t.qty}","${t.assignee}","${t.action.replace(/"/g, '""')}","${statusStr}","${t.completed ? 'ใช่' : 'ไม่'}"\n`;
+
+                if (t.subtasks && t.subtasks.length > 0) {
+                    t.subtasks.forEach(st => {
+                        csv += `"${st.id}","${catStr} (ย่อย)","└─ ${st.title.replace(/"/g, '""')}","-","-","${st.assignee}","-","${st.completed ? 'เสร็จสิ้น' : st.status}","${st.completed ? 'ใช่' : 'ไม่'}"\n`;
+                    });
+                }
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `Task_Tracking_Dashboard_OQA_WAC_14102026.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast("ดาวน์โหลดไฟล์ CSV เรียบร้อย", 'success');
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const bgColors = {
+                success: 'bg-emerald-800 text-white border-emerald-600',
+                warning: 'bg-amber-800 text-white border-amber-600',
+                info: 'bg-slate-800 text-white border-slate-600'
+            };
+
+            const icons = {
+                success: 'fa-circle-check',
+                warning: 'fa-triangle-exclamation',
+                info: 'fa-circle-info'
+            };
+
+            toast.className = `flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg border text-xs font-medium transform transition-all duration-300 translate-y-2 opacity-0 ${bgColors[type] || bgColors.info}`;
+            toast.innerHTML = `<i class="fa-solid ${icons[type] || icons.info}"></i> <span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
